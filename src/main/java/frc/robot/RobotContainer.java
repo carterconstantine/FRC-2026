@@ -176,7 +176,7 @@ public class RobotContainer {
     thetaController.enableContinuousInput(-Math.PI, Math.PI);
 
     // 4. Construct command to follow trajectory
-    SwerveControllerCommand swerveControllerCommand = new SwerveControllerCommand(
+    SwerveControllerCommand swerveControllerCommandForward = new SwerveControllerCommand(
         trajectoryForward,
         m_robotDrive::getPose,
         DriveConstants.kDriveKinematics,
@@ -189,7 +189,7 @@ public class RobotContainer {
     // 5. Add some init and wrap-up, and return everything
     return new SequentialCommandGroup(
         new InstantCommand(() -> m_robotDrive.resetOdometry(trajectoryForward.getInitialPose())),
-        swerveControllerCommand,
+        swerveControllerCommandForward,
         new InstantCommand(() -> m_robotDrive.stopModules()));
     }
 }
