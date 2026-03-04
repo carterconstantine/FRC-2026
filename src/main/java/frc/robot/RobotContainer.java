@@ -146,6 +146,13 @@ public class RobotContainer {
    * @return the command to run in autonomous
    */
   
+  // I made some changes to the auto:
+  // I renamed the basic "trajectory" to "trajectoryForward"
+  // I added a "origin" Pose2d for using in auto
+  //    -Desmond
+
+  // This is where we can put pose2d for easier orginization:
+  Pose2d origin = new Pose2d(0,0, new Rotation2d(0));
   
   public Command getAutonomousCommand() {
     // 1. Create trajectory settings
@@ -155,8 +162,8 @@ public class RobotContainer {
               .setKinematics(DriveConstants.kDriveKinematics);
 
     // 2. Generate trajectory
-    Trajectory trajectory = TrajectoryGenerator.generateTrajectory(
-        new Pose2d(0, 0, new Rotation2d(0)),
+    Trajectory trajectoryForward = TrajectoryGenerator.generateTrajectory(
+        origin,
         List.of(),
         new Pose2d(Units.feetToMeters(10), 0, new Rotation2d(0)),
         trajectoryConfig);
@@ -170,7 +177,7 @@ public class RobotContainer {
 
     // 4. Construct command to follow trajectory
     SwerveControllerCommand swerveControllerCommand = new SwerveControllerCommand(
-        trajectory,
+        trajectoryForward,
         m_robotDrive::getPose,
         DriveConstants.kDriveKinematics,
         xController,
@@ -181,7 +188,7 @@ public class RobotContainer {
 
     // 5. Add some init and wrap-up, and return everything
     return new SequentialCommandGroup(
-        new InstantCommand(() -> m_robotDrive.resetOdometry(trajectory.getInitialPose())),
+        new InstantCommand(() -> m_robotDrive.resetOdometry(trajectoryForward.getInitialPose())),
         swerveControllerCommand,
         new InstantCommand(() -> m_robotDrive.stopModules()));
     }
