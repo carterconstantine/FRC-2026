@@ -175,6 +175,12 @@ public class RobotContainer {
         new Pose2d(Units.feetToMeters(10), 0, new Rotation2d(0)),
         trajectoryConfig);
 
+    Trajectory trajectoryBackward = TrajectoryGenerator.generateTrajectory(
+        origin,
+        List.of(),
+        new Pose2d(Units.feetToMeters(-10), 0, new Rotation2d(0)),
+        trajectoryConfigBackwards);
+
     // 3. Define PID controllers for tracking trajectory
     PIDController xController = new PIDController(AutoConstants.kPXController, 0, 0);
     PIDController yController = new PIDController(AutoConstants.kPYController, 0, 0);
