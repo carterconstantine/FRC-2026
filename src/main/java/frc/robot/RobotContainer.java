@@ -165,7 +165,8 @@ public class RobotContainer {
       AutoConstants.kMaxSpeedMetersPerSecond,
       AutoConstants.kMaxAccelerationMetersPerSecondSquared)
               .setKinematics(DriveConstants.kDriveKinematics);
-    trajectoryConfigBackwards.addConstraint();// unfinnished -Desmond
+              .setReversed(true);
+    //trajectoryConfigBackwards.addConstraint();// unfinnished -Desmond
 
     // 2. Generate trajectory
     Trajectory trajectoryForward = TrajectoryGenerator.generateTrajectory(
