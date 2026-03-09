@@ -27,6 +27,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.RunCommand;
+import edu.wpi.first.wpilibj2.command.WaitCommand;
 import edu.wpi.first.wpilibj2.command.SwerveControllerCommand;
 import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 
@@ -85,15 +86,34 @@ public class RobotContainer {
     // Creates a Button that sets the robots x on the press of the Left Bumper button on pilot controller. 
     new JoystickButton(pilot, XboxController.Button.kLeftBumper.value).debounce(0.1,DebounceType.kRising)
         .onTrue(new InstantCommand(
-            () -> m_robotDrive.setX(),
-            m_robotDrive));
+          () -> RobotCommands.reverseLauncher(),
+          m_robotDrive));
 
     // Creates a button that sets start pneumatics on the press of the start button on pilot controller.
     new JoystickButton(pilot, XboxController.Button.kStart.value).debounce(0.1,DebounceType.kRising)
-    .onTrue(new InstantCommand(
-      () -> RobotCommands.setStartPneumatics(),
-    m_robotDrive));
+      .onTrue(new InstantCommand(
+        () -> RobotCommands.feedTurboOnOrOff(),
+        m_robotDrive));
 
+    new JoystickButton(pilot, XboxController.Button.kA.value).debounce(0.1,DebounceType.kRising)
+      .onTrue(new InstantCommand(
+        () -> RobotCommands.setLauncherSpeed(70.0),
+        m_robotDrive));
+
+    new JoystickButton(pilot, XboxController.Button.kB.value).debounce(0.1,DebounceType.kRising)
+      .onTrue(new InstantCommand(
+        () -> RobotCommands.setLauncherSpeed(80.0),
+        m_robotDrive));
+
+    new JoystickButton(pilot, XboxController.Button.kY.value).debounce(0.1,DebounceType.kRising)
+      .onTrue(new InstantCommand(
+        () -> RobotCommands.setLauncherSpeed(90.0),
+        m_robotDrive));
+
+    new JoystickButton(pilot, XboxController.Button.kX.value).debounce(0.1,DebounceType.kRising)
+      .onTrue(new InstantCommand(
+        () -> RobotCommands.setLauncherSpeed(100.0),
+        m_robotDrive));
 
    
         // Co Pilot Commands Below-
@@ -101,7 +121,19 @@ public class RobotContainer {
     // Creates a button that runs Intake Forward or Reverse based on the press of the A button on copilot controller.
     new JoystickButton(copilot, XboxController.Button.kA.value).debounce(0.1,DebounceType.kRising)
       .onTrue(new InstantCommand(
-        () -> RobotCommands.intakeForwardOrReverse(),
+        () -> RobotCommands.intakeMode(),
+        m_robotDrive));
+
+    // Creates a button that sets start pneumatics on the press of the start button on pilot controller.
+    new JoystickButton(copilot, XboxController.Button.kStart.value).debounce(0.1,DebounceType.kRising)
+      .onTrue(new InstantCommand(
+        () -> RobotCommands.setStartPneumatics(),
+        m_robotDrive));
+
+    // Creates a button that runs Intake Forward or Reverse based on the press of the A button on copilot controller.
+    new JoystickButton(copilot, XboxController.Button.kRightBumper.value).debounce(0.1,DebounceType.kRising)
+      .onTrue(new InstantCommand(
+        () -> RobotCommands.shooterMode(),
         m_robotDrive));
 
     // Creates a button that stops all robot motors when pressed
@@ -117,7 +149,7 @@ public class RobotContainer {
         m_robotDrive));
 
     // Creates a button that runs Climb In or Out based on the press of the X button on copilot controller.
-    new JoystickButton(copilot, XboxController.Button.kY.value).debounce(0.1,DebounceType.kRising)
+    new JoystickButton(copilot, XboxController.Button.kX.value).debounce(0.1,DebounceType.kRising)
       .onTrue(new InstantCommand(
         () -> RobotCommands.climbInOrOut(),
         m_robotDrive));
@@ -146,40 +178,42 @@ public class RobotContainer {
    * @return the command to run in autonomous
    */
   
-  // I made some changes to the auto:
-  // I renamed the basic "trajectory" to "trajectoryForward"
-  // I added a "origin" Pose2d for using in auto
-  //    -Desmond
-
-  // This is where we can put pose2d for easier orginization:
-  Pose2d origin = new Pose2d(0,0, new Rotation2d(0));
   
   public Command getAutonomousCommand() {
     // 1. Create trajectory settings
-    TrajectoryConfig trajectoryConfig = new TrajectoryConfig(
+    TrajectoryConfig driveEightFeetTrajectoryConfig = new TrajectoryConfig(
       AutoConstants.kMaxSpeedMetersPerSecond,
       AutoConstants.kMaxAccelerationMetersPerSecondSquared)
               .setKinematics(DriveConstants.kDriveKinematics);
 
-    TrajectoryConfig trajectoryConfigBackwards = new TrajectoryConfig(
-      AutoConstants.kMaxSpeedMetersPerSecond,
+    TrajectoryConfig driveUntilLimitTrajectoryConfig = new TrajectoryConfig(
+      0.5,
       AutoConstants.kMaxAccelerationMetersPerSecondSquared)
               .setKinematics(DriveConstants.kDriveKinematics);
-              .setReversed(true);
-    //trajectoryConfigBackwards.addConstraint();// unfinnished -Desmond
+
+    TrajectoryConfig driveIntoSideTrajectoryConfig = new TrajectoryConfig(
+      0.5,
+      AutoConstants.kMaxAccelerationMetersPerSecondSquared)
+              .setKinematics(DriveConstants.kDriveKinematics);
 
     // 2. Generate trajectory
-    Trajectory trajectoryForward = TrajectoryGenerator.generateTrajectory(
-        origin,
+    Trajectory driveEightFeetTrajectory = TrajectoryGenerator.generateTrajectory(
+        new Pose2d(0, 0, new Rotation2d(0)),
+        List.of(),
+        new Pose2d(Units.feetToMeters(8), 0, new Rotation2d(0)),
+        driveEightFeetTrajectoryConfig);
+
+    Trajectory driveUntilLimitTrajectory = TrajectoryGenerator.generateTrajectory(
+        new Pose2d(0, 0, new Rotation2d(0)),
         List.of(),
         new Pose2d(Units.feetToMeters(10), 0, new Rotation2d(0)),
-        trajectoryConfig);
+        driveUntilLimitTrajectoryConfig);
 
-    Trajectory trajectoryBackward = TrajectoryGenerator.generateTrajectory(
-        origin,
+    Trajectory driveIntoSideTrajectory = TrajectoryGenerator.generateTrajectory(
+        new Pose2d(0, 0, new Rotation2d(0)),
         List.of(),
-        new Pose2d(Units.feetToMeters(-10), 0, new Rotation2d(0)),
-        trajectoryConfigBackwards);
+        new Pose2d(0, Units.feetToMeters(0.5), new Rotation2d(0)),
+        driveIntoSideTrajectoryConfig);
 
     // 3. Define PID controllers for tracking trajectory
     PIDController xController = new PIDController(AutoConstants.kPXController, 0, 0);
@@ -189,8 +223,8 @@ public class RobotContainer {
     thetaController.enableContinuousInput(-Math.PI, Math.PI);
 
     // 4. Construct command to follow trajectory
-    SwerveControllerCommand swerveControllerCommandForward = new SwerveControllerCommand(
-        trajectoryForward,
+    SwerveControllerCommand driveEightFeet = new SwerveControllerCommand(
+        driveEightFeetTrajectory,
         m_robotDrive::getPose,
         DriveConstants.kDriveKinematics,
         xController,
@@ -199,11 +233,43 @@ public class RobotContainer {
         m_robotDrive::setModuleStates,
         m_robotDrive);
 
+    SwerveControllerCommand driveintoSide = new SwerveControllerCommand(
+      driveIntoSideTrajectory,
+      m_robotDrive::getPose,
+      DriveConstants.kDriveKinematics,
+      xController,
+      yController,
+      thetaController,
+      m_robotDrive::setModuleStates,
+      m_robotDrive);
+
+    Command driveUntilLimit = new SwerveControllerCommand(
+      driveUntilLimitTrajectory,
+      m_robotDrive::getPose,
+      DriveConstants.kDriveKinematics,
+      xController,
+      yController,
+      thetaController,
+      m_robotDrive::setModuleStates,
+      m_robotDrive).until(() -> RobotCommands.limitSwitchPressed());
+
     // 5. Add some init and wrap-up, and return everything
     return new SequentialCommandGroup(
-        new InstantCommand(() -> m_robotDrive.resetOdometry(trajectoryForward.getInitialPose())),
-        swerveControllerCommandForward,
-        new InstantCommand(() -> m_robotDrive.stopModules())
-    );
-  }
+      new WaitCommand(1),
+      new InstantCommand(() -> RobotCommands.climbUp()),
+      new WaitCommand(1),
+      new InstantCommand(() -> RobotCommands.climbOut()),
+      new WaitCommand(1),
+      new InstantCommand(() -> m_robotDrive.resetOdometry(driveUntilLimitTrajectory.getInitialPose())),
+      driveUntilLimit,
+      new InstantCommand(() -> m_robotDrive.stopModules()),
+      new InstantCommand(() -> m_robotDrive.resetOdometry(driveIntoSideTrajectory.getInitialPose())),
+      driveintoSide,
+      new WaitCommand(0.5),
+      new InstantCommand(() -> RobotCommands.climbIn()),
+      new WaitCommand(1),
+      new InstantCommand(() -> RobotCommands.climbDown())
+      );
+
+    }
 }
