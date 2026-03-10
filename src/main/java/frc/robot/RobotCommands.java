@@ -53,9 +53,9 @@ public class RobotCommands {
         isFeedTurbo = !isFeedTurbo;
         if (isFeedTurbo) {
             if (isIntakeForward) {
-                feedMotor.set(-0.40);
+                feedMotor.set(-0.9);
             } else {
-                feedMotor.set(0.40);
+                feedMotor.set(0.9);
             }
         } else {
             if (isIntakeForward) {
@@ -126,16 +126,19 @@ public class RobotCommands {
         launcherMotor.set(LauncherConstants.kMaxRotationPickupSpeed);
     }
 
-    static void shooterMode() {
-        isIntakeForward = false;
-        intakeMotor.set(-LauncherConstants.kMaxRotationIntakeSpeed);
+    static void shooterFeedReduce() {
         feedMotor.set(LauncherConstants.kMaxRotationFeedSpeed);
-        launcherMotor.set(launcherSpeed);
     }
 
-    static void setLauncherSpeed(double newSpeed) {
-        launcherSpeed = newSpeed;
-        launcherMotor.set(launcherSpeed);
+    static void shooterEverythingStart() {
+        isIntakeForward = false;
+        intakeMotor.set(-LauncherConstants.kMaxRotationIntakeSpeed);
+        feedMotor.set(0.9);
+    }
+
+    static void shooterLauncherStart(double speed) {
+        isIntakeForward = false;
+        launcherMotor.set(speed);
     }
 
     static void reverseLauncher() {
