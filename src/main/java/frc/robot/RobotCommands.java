@@ -6,19 +6,73 @@ import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.DoubleSolenoid;
 import edu.wpi.first.wpilibj.PneumaticsModuleType;
 
+import com.revrobotics.RelativeEncoder;
+import com.revrobotics.spark.SparkBase;
+import com.revrobotics.spark.SparkClosedLoopController;
 import com.revrobotics.spark.SparkFlex;
+import com.revrobotics.spark.SparkMax;
+import com.revrobotics.spark.config.SparkMaxConfig;
 import frc.robot.Constants.LauncherConstants;
 import frc.robot.Constants.SweeperConstants;
+import frc.robot.Configs.MAXSwerveModule;
 
 public class RobotCommands { 
     // Intializes the intake Motor on the Robot as A SparkFlex Brushless Motor
-    static SparkFlex intakeMotor = new SparkFlex(LauncherConstants.intakeMotor, MotorType.kBrushless);
+    static SparkMax intakeMotor = new SparkMax(LauncherConstants.intakeMotor, MotorType.kBrushless);
+    static RelativeEncoder intakeEncoder = intakeMotor.getEncoder();
+    static SparkClosedLoopController intakePID = intakeMotor.getClosedLoopController();
+
     // Intializes the launcher Motor on the Robot as A SparkFlex Brushless Motor
-    static SparkFlex launcherMotor = new SparkFlex(LauncherConstants.launcherMotor, MotorType.kBrushless);
+    static SparkMax launcherMotor = new SparkMax(LauncherConstants.launcherMotor, MotorType.kBrushless);
+    static RelativeEncoder launcherEncoder = launcherMotor.getEncoder();
+    static SparkClosedLoopController launcherPID = launcherMotor.getClosedLoopController();
+
     // Intializes the feed Motor on the Robot as A SparkFlex Brushless Motor
-    static SparkFlex feedMotor = new SparkFlex(LauncherConstants.feedMotor, MotorType.kBrushless);
-    // Intializes the sweeperMotor Motor on the Robot as A SparkFlex Brushless Motor
-    static SparkFlex sweeperMotor = new SparkFlex(SweeperConstants.sweeperMotor, MotorType.kBrushless);
+    static SparkMax feedMotor = new SparkMax(LauncherConstants.feedMotor, MotorType.kBrushless);
+    static RelativeEncoder feedEncoder = feedMotor.getEncoder();
+    static SparkClosedLoopController feedPID = feedMotor.getClosedLoopController();
+
+    // Configure PID for all motors
+    static {
+        SparkMaxConfig intakeConfig = new SparkMaxConfig();
+        SparkMaxConfig launcherConfig = new SparkMaxConfig();
+        SparkMaxConfig feedConfig = new SparkMaxConfig();
+        
+
+        intakeConfig.closedLoop
+            .p(0.0003)
+            .i(0.0)
+            .d(0.0)
+            .velocityFF(0.00019)
+            .outputRange(-1, 1);
+
+        launcherConfig.closedLoop
+            .p(0.0003)
+            .i(0.0)
+            .d(0.0)
+            .velocityFF(0.00019)
+            .outputRange(-1, 1);
+
+        feedConfig.closedLoop
+            .p(0.0003)
+            .i(0.0)
+            .d(0.0)
+            .velocityFF(0.00016)
+            .outputRange(-1, 1);
+
+        // Apply to the motor
+        intakeMotor.configure(intakeConfig, 
+            SparkBase.ResetMode.kResetSafeParameters, 
+            SparkBase.PersistMode.kPersistParameters);
+
+        launcherMotor.configure(launcherConfig, 
+            SparkBase.ResetMode.kResetSafeParameters, 
+            SparkBase.PersistMode.kPersistParameters);
+
+        feedMotor.configure(feedConfig, 
+            SparkBase.ResetMode.kResetSafeParameters, 
+            SparkBase.PersistMode.kPersistParameters);
+    }
        
     // Creates a New Duouble solenoid value for the Algae Pusher on the bot using Module 54, the REVPH module, with a forward and reversechannel pins
     static DoubleSolenoid climbHorizNoid = new DoubleSolenoid(54,PneumaticsModuleType.REVPH,1,12);
@@ -36,7 +90,9 @@ public class RobotCommands {
     public static boolean isIntakeForward = false;
     public static boolean isFeedTurbo = false;
 
-    private static double launcherSpeed = LauncherConstants.kMaxRotationLauncherSpeed;
+    public static double getLauncherRPM() {
+        return launcherEncoder.getVelocity();
+    }
 
     public static boolean limitSwitchPressed() {
         return !limitSwitch.get();
@@ -53,15 +109,15 @@ public class RobotCommands {
         isFeedTurbo = !isFeedTurbo;
         if (isFeedTurbo) {
             if (isIntakeForward) {
-                feedMotor.set(-0.9);
+                feedPID.setReference(-3000, SparkBase.ControlType.kVelocity);
             } else {
-                feedMotor.set(0.9);
+                feedPID.setReference(3000, SparkBase.ControlType.kVelocity);
             }
         } else {
             if (isIntakeForward) {
-                feedMotor.set(-LauncherConstants.kMaxRotationFeedSpeed);
+                feedPID.setReference(-LauncherConstants.kMaxRotationFeedSpeed, SparkBase.ControlType.kVelocity);
             } else {
-                feedMotor.set(LauncherConstants.kMaxRotationFeedSpeed);
+                feedPID.setReference(LauncherConstants.kMaxRotationFeedSpeed, SparkBase.ControlType.kVelocity);
             }
         }
     }
@@ -121,28 +177,24 @@ public class RobotCommands {
 
     static void intakeMode() {
         isIntakeForward = true;
-        intakeMotor.set(LauncherConstants.kMaxRotationIntakeSpeed);
-        feedMotor.set(-LauncherConstants.kMaxRotationFeedSpeed);
-        launcherMotor.set(LauncherConstants.kMaxRotationPickupSpeed);
+        intakePID.setReference(LauncherConstants.kMaxRotationIntakeSpeed, SparkBase.ControlType.kVelocity);
+        feedPID.setReference(-LauncherConstants.kMaxRotationFeedSpeed, SparkBase.ControlType.kVelocity);
+        launcherPID.setReference(LauncherConstants.kMaxRotationPickupSpeed, SparkBase.ControlType.kVelocity);
     }
 
     static void shooterFeedReduce() {
-        feedMotor.set(LauncherConstants.kMaxRotationFeedSpeed);
+        feedPID.setReference(LauncherConstants.kMaxRotationFeedSpeed, SparkBase.ControlType.kVelocity);
     }
 
     static void shooterEverythingStart() {
         isIntakeForward = false;
-        intakeMotor.set(-LauncherConstants.kMaxRotationIntakeSpeed);
-        feedMotor.set(0.9);
+        intakePID.setReference(-LauncherConstants.kMaxRotationIntakeSpeed,SparkBase.ControlType.kVelocity);
+        feedPID.setReference(3000, SparkBase.ControlType.kVelocity);
     }
 
     static void shooterLauncherStart(double speed) {
         isIntakeForward = false;
-        launcherMotor.set(speed);
-    }
-
-    static void reverseLauncher() {
-        launcherMotor.set(0-launcherSpeed);
+        launcherPID.setReference(speed,SparkBase.ControlType.kVelocity);
     }
         
     // Stops ALL Motors except Drive Train Motor    

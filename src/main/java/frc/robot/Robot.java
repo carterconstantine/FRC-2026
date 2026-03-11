@@ -78,6 +78,7 @@ public class Robot extends TimedRobot {
       leds.set(1);
     }
 
+    System.out.println(RobotCommands.getLauncherRPM());
   
     //System.out.println("test");
   }

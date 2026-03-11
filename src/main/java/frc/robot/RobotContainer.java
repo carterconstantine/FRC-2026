@@ -83,11 +83,6 @@ public class RobotContainer {
 
 
     // Use InstantCommand for commands that only run once
-    // Creates a Button that sets the robots x on the press of the Left Bumper button on pilot controller. 
-    new JoystickButton(pilot, XboxController.Button.kLeftBumper.value).debounce(0.1,DebounceType.kRising)
-        .onTrue(new InstantCommand(
-          () -> RobotCommands.reverseLauncher(),
-          m_robotDrive));
 
     // Creates a button that sets start pneumatics on the press of the start button on pilot controller.
     new JoystickButton(pilot, XboxController.Button.kStart.value).debounce(0.1,DebounceType.kRising)
@@ -105,7 +100,7 @@ public class RobotContainer {
         m_robotDrive));
 
     new JoystickButton(copilot, XboxController.Button.kBack.value).debounce(0.1,DebounceType.kRising)
-      .onTrue(new InstantCommand(() -> RobotCommands.shooterLauncherStart(1),m_robotDrive)
+      .onTrue(new InstantCommand(() -> RobotCommands.shooterLauncherStart(5500),m_robotDrive)
         .andThen(new WaitCommand(0.5))
         .andThen(new InstantCommand(() -> RobotCommands.shooterEverythingStart(), m_robotDrive))
         .andThen(new WaitCommand(0.5))
@@ -113,7 +108,7 @@ public class RobotContainer {
 
     // Creates a button that sets start pneumatics on the press of the start button on pilot controller.
     new JoystickButton(copilot, XboxController.Button.kStart.value).debounce(0.1,DebounceType.kRising)
-      .onTrue(new InstantCommand(() -> RobotCommands.shooterLauncherStart(0.85),m_robotDrive)
+      .onTrue(new InstantCommand(() -> RobotCommands.shooterLauncherStart(4500),m_robotDrive)
         .andThen(new WaitCommand(0.5))
         .andThen(new InstantCommand(() -> RobotCommands.shooterEverythingStart(), m_robotDrive))
         .andThen(new WaitCommand(0.5))
@@ -121,7 +116,7 @@ public class RobotContainer {
 
     // Creates a button that runs Intake Forward or Reverse based on the press of the A button on copilot controller.
     new JoystickButton(copilot, XboxController.Button.kRightBumper.value).debounce(0.1,DebounceType.kRising)
-      .onTrue(new InstantCommand(() -> RobotCommands.shooterLauncherStart(0.69),m_robotDrive)
+      .onTrue(new InstantCommand(() -> RobotCommands.shooterLauncherStart(3500),m_robotDrive)
         .andThen(new WaitCommand(0.5))
         .andThen(new InstantCommand(() -> RobotCommands.shooterEverythingStart(), m_robotDrive))
         .andThen(new WaitCommand(0.5))
@@ -156,11 +151,6 @@ public class RobotContainer {
       .onTrue(new InstantCommand(
         () -> RobotCommands.motorStop(),
         m_robotDrive));
-  }
-
-  // conversion for meters to mystery units 
-  public static double unitsToMeters(double units) {
-    return units * 1.51;
   }
 
   /**
@@ -268,7 +258,7 @@ public class RobotContainer {
 
     // 5. Add some init and wrap-up, and return everything
     return new SequentialCommandGroup(
-      new InstantCommand(() -> RobotCommands.shooterLauncherStart(0.67)),
+      new InstantCommand(() -> RobotCommands.shooterLauncherStart(3500)),
       new WaitCommand(0.5),
       new InstantCommand(() -> RobotCommands.shooterEverythingStart()),
       new WaitCommand(0.5),
