@@ -106,7 +106,7 @@ public final class Constants {
     public static final int feedMotor=53;
     public static final double kMaxRotationPickupSpeed = 4000;
     public static final double kMaxRotationIntakeSpeed = 4000;
-    public static final double kMaxRotationFeedSpeed=1000;
+    public static final double kMaxRotationFeedSpeed = 800;
   }
   public static final class ElevatorConstants{
     public static final int orginalPos=0;

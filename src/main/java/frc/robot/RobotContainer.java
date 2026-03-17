@@ -21,9 +21,7 @@ import frc.robot.Constants.AutoConstants;
 import frc.robot.Constants.DriveConstants;
 import frc.robot.Constants.OIConstants;
 import frc.robot.subsystems.DriveSubsystem;
-//import frc.robot.RobotCommands;
 import edu.wpi.first.wpilibj2.command.Command;
-//import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.RunCommand;
@@ -116,7 +114,7 @@ public class RobotContainer {
 
     // Creates a button that runs Intake Forward or Reverse based on the press of the A button on copilot controller.
     new JoystickButton(copilot, XboxController.Button.kRightBumper.value).debounce(0.1,DebounceType.kRising)
-      .onTrue(new InstantCommand(() -> RobotCommands.shooterLauncherStart(3500),m_robotDrive)
+      .onTrue(new InstantCommand(() -> RobotCommands.shooterLauncherStart(3600),m_robotDrive)
         .andThen(new WaitCommand(0.5))
         .andThen(new InstantCommand(() -> RobotCommands.shooterEverythingStart(), m_robotDrive))
         .andThen(new WaitCommand(0.5))
@@ -153,6 +151,37 @@ public class RobotContainer {
         m_robotDrive));
   }
 
+  public Command turnRelative(double degrees) {
+    PIDController turnPid = new PIDController(0.01, 0, 0); // Adjust P if too slow
+    turnPid.enableContinuousInput(-180, 180);
+    turnPid.setTolerance(2.0); // How close is "good enough"
+
+    // Use a wrapper object so the lambda can see the updated value
+    var target = new Object() { double angle = 0; };
+
+    return new SequentialCommandGroup(
+        // 1. Capture the start
+        new InstantCommand(() -> {
+            target.angle = m_robotDrive.getHeading() + degrees;
+            turnPid.reset();
+        }),
+        // 2. Run the turn
+        new RunCommand(() -> {
+            double speed = turnPid.calculate(m_robotDrive.getHeading(), target.angle);
+            
+            // Add a tiny bit of "Minimum Speed" to overcome friction if needed
+            // if (Math.abs(speed) < 0.05) speed = Math.signum(speed) * 0.05;
+
+            m_robotDrive.drive(0, 0, speed, false);
+        }, m_robotDrive)
+        .until(turnPid::atSetpoint) // STOP when within tolerance
+        .withTimeout(0.25), // HARD STOP after 0.25 seconds no matter what
+        
+        // 3. Cleanup
+        new InstantCommand(() -> {m_robotDrive.drive(0, 0, 0, false); turnPid.close();})
+    );
+  }
+
   /**
    * Use this to pass the autonomous command to the main {@link Robot} class.
    *
@@ -167,8 +196,8 @@ public class RobotContainer {
       AutoConstants.kMaxAccelerationMetersPerSecondSquared)
               .setKinematics(DriveConstants.kDriveKinematics);
 
-    TrajectoryConfig driveBackwardsUntilLimitTrajectoryConfig = new TrajectoryConfig(
-      0.5,
+    TrajectoryConfig driveBackwardsFourFeetTrajectoryConfig = new TrajectoryConfig(
+      2,
       AutoConstants.kMaxAccelerationMetersPerSecondSquared)
               .setKinematics(DriveConstants.kDriveKinematics)
               .setReversed(true);
@@ -177,6 +206,12 @@ public class RobotContainer {
       0.5,
       AutoConstants.kMaxAccelerationMetersPerSecondSquared)
               .setKinematics(DriveConstants.kDriveKinematics);
+
+    TrajectoryConfig driveBackwardsUntilLimitTrajectoryConfig = new TrajectoryConfig(
+      0.5,
+      AutoConstants.kMaxAccelerationMetersPerSecondSquared)
+              .setKinematics(DriveConstants.kDriveKinematics)
+              .setReversed(true);
 
     TrajectoryConfig driveIntoSideTrajectoryConfig = new TrajectoryConfig(
       0.5,
@@ -190,6 +225,12 @@ public class RobotContainer {
         new Pose2d(Units.feetToMeters(4), 0, new Rotation2d(0)),
         driveFourFeetTrajectoryConfig);
 
+    Trajectory driveBackwardsFourFeetTrajectory = TrajectoryGenerator.generateTrajectory(
+      new Pose2d(0, 0, new Rotation2d(0)),
+      List.of(),
+      new Pose2d(Units.feetToMeters(-4), 0, new Rotation2d(0)),
+      driveBackwardsFourFeetTrajectoryConfig);
+
     Trajectory driveBackwardsUntilLimitTrajectory = TrajectoryGenerator.generateTrajectory(
       new Pose2d(0, 0, new Rotation2d(0)),
       List.of(),
@@ -202,11 +243,17 @@ public class RobotContainer {
         new Pose2d(Units.feetToMeters(10), 0, new Rotation2d(0)),
         driveUntilLimitTrajectoryConfig);
 
-    Trajectory driveIntoSideTrajectory = TrajectoryGenerator.generateTrajectory(
+    Trajectory driveLeftIntoSideTrajectory = TrajectoryGenerator.generateTrajectory(
         new Pose2d(0, 0, new Rotation2d(0)),
         List.of(),
         new Pose2d(0, Units.feetToMeters(0.5), new Rotation2d(0)),
         driveIntoSideTrajectoryConfig);
+
+    Trajectory driveRightIntoSideTrajectory = TrajectoryGenerator.generateTrajectory(
+      new Pose2d(0, 0, new Rotation2d(0)),
+      List.of(),
+      new Pose2d(0, Units.feetToMeters(-0.5), new Rotation2d(0)),
+      driveIntoSideTrajectoryConfig);
 
     // 3. Define PID controllers for tracking trajectory
     PIDController xController = new PIDController(AutoConstants.kPXController, 0, 0);
@@ -226,6 +273,16 @@ public class RobotContainer {
         m_robotDrive::setModuleStates,
         m_robotDrive);
 
+    SwerveControllerCommand driveBackwardsFourFeet = new SwerveControllerCommand(
+      driveBackwardsFourFeetTrajectory,
+      m_robotDrive::getPose,
+      DriveConstants.kDriveKinematics,
+      xController,
+      yController,
+      thetaController,
+      m_robotDrive::setModuleStates,
+      m_robotDrive);
+
     Command driveBackwardsUntilLimit = new SwerveControllerCommand(
       driveBackwardsUntilLimitTrajectory,
       m_robotDrive::getPose,
@@ -236,8 +293,18 @@ public class RobotContainer {
       m_robotDrive::setModuleStates,
       m_robotDrive).until(() -> RobotCommands.limitSwitchPressed());
 
-    SwerveControllerCommand driveintoSide = new SwerveControllerCommand(
-      driveIntoSideTrajectory,
+    SwerveControllerCommand driveLeftIntoSide = new SwerveControllerCommand(
+      driveLeftIntoSideTrajectory,
+      m_robotDrive::getPose,
+      DriveConstants.kDriveKinematics,
+      xController,
+      yController,
+      thetaController,
+      m_robotDrive::setModuleStates,
+      m_robotDrive);
+
+    SwerveControllerCommand driveRightIntoSide = new SwerveControllerCommand(
+      driveRightIntoSideTrajectory,
       m_robotDrive::getPose,
       DriveConstants.kDriveKinematics,
       xController,
@@ -256,9 +323,13 @@ public class RobotContainer {
       m_robotDrive::setModuleStates,
       m_robotDrive).until(() -> RobotCommands.limitSwitchPressed());
 
+    
+
     // 5. Add some init and wrap-up, and return everything
-    return new SequentialCommandGroup(
-      new InstantCommand(() -> RobotCommands.shooterLauncherStart(3500)),
+    String autoMode = RobotCommands.getAutoMode();
+    if (autoMode.equals("001")) {
+      return new SequentialCommandGroup(
+      new InstantCommand(() -> RobotCommands.shooterLauncherStart(3600)),
       new WaitCommand(0.5),
       new InstantCommand(() -> RobotCommands.shooterEverythingStart()),
       new WaitCommand(0.5),
@@ -275,15 +346,68 @@ public class RobotContainer {
       new InstantCommand(() -> m_robotDrive.resetOdometry(driveUntilLimitTrajectory.getInitialPose())),
       driveUntilLimit,
       new InstantCommand(() -> m_robotDrive.stopModules()),
-      new InstantCommand(() -> m_robotDrive.resetOdometry(driveIntoSideTrajectory.getInitialPose())),
-      driveintoSide,
+      new InstantCommand(() -> m_robotDrive.resetOdometry(driveLeftIntoSideTrajectory.getInitialPose())),
+      driveLeftIntoSide,
       new WaitCommand(0.5),
       new InstantCommand(() -> RobotCommands.climbIn()),
       new WaitCommand(1),
       new InstantCommand(() -> RobotCommands.climbDown())
-
-      
+      //turnRelative(-10)
       );
-
     }
+    else if (autoMode.equals("010")) {
+      return new SequentialCommandGroup(
+        new InstantCommand(() -> RobotCommands.climbUp()),
+        new WaitCommand(1),
+        new InstantCommand(() -> RobotCommands.climbOut()),
+        new WaitCommand(1),
+        new InstantCommand(() -> m_robotDrive.resetOdometry(driveBackwardsFourFeetTrajectory.getInitialPose())),
+        driveBackwardsFourFeet,
+        new InstantCommand(() -> m_robotDrive.stopModules()),
+        new InstantCommand(() -> m_robotDrive.resetOdometry(driveBackwardsUntilLimitTrajectory.getInitialPose())),
+        driveBackwardsUntilLimit,
+        new InstantCommand(() -> m_robotDrive.stopModules()),
+        new InstantCommand(() -> m_robotDrive.resetOdometry(driveRightIntoSideTrajectory.getInitialPose())),
+        driveRightIntoSide,
+        new WaitCommand(0.5),
+        new InstantCommand(() -> RobotCommands.climbIn()),
+        new WaitCommand(1),
+        new InstantCommand(() -> RobotCommands.climbDown())
+      );
+    }
+    else if (autoMode.equals("011")) {
+      return new SequentialCommandGroup(
+        new InstantCommand(() -> RobotCommands.shooterLauncherStart(3600)),
+        new WaitCommand(0.5),
+        new InstantCommand(() -> RobotCommands.shooterEverythingStart()),
+        new WaitCommand(0.5),
+        new InstantCommand(() -> RobotCommands.shooterFeedReduce()),
+        new WaitCommand(5),
+        new InstantCommand(() -> RobotCommands.motorStop())
+      );
+    }
+    else if (autoMode.equals("100")) {
+      return new SequentialCommandGroup(
+        new InstantCommand(() -> RobotCommands.climbUp()),
+        new WaitCommand(1),
+        new InstantCommand(() -> RobotCommands.climbOut()),
+        new WaitCommand(1),
+        new InstantCommand(() -> m_robotDrive.resetOdometry(driveFourFeetTrajectory.getInitialPose())),
+        driveFourFeet,
+        new InstantCommand(() -> m_robotDrive.stopModules()),
+        new InstantCommand(() -> m_robotDrive.resetOdometry(driveUntilLimitTrajectory.getInitialPose())),
+        driveUntilLimit,
+        new InstantCommand(() -> m_robotDrive.stopModules()),
+        new InstantCommand(() -> m_robotDrive.resetOdometry(driveLeftIntoSideTrajectory.getInitialPose())),
+        driveLeftIntoSide,
+        new WaitCommand(0.5),
+        new InstantCommand(() -> RobotCommands.climbIn()),
+        new WaitCommand(1),
+        new InstantCommand(() -> RobotCommands.climbDown())
+      );
+    }
+    else {
+      return new SequentialCommandGroup();
+    }
+  }
 }

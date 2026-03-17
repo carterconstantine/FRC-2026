@@ -9,12 +9,9 @@ import edu.wpi.first.wpilibj.PneumaticsModuleType;
 import com.revrobotics.RelativeEncoder;
 import com.revrobotics.spark.SparkBase;
 import com.revrobotics.spark.SparkClosedLoopController;
-import com.revrobotics.spark.SparkFlex;
 import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.config.SparkMaxConfig;
 import frc.robot.Constants.LauncherConstants;
-import frc.robot.Constants.SweeperConstants;
-import frc.robot.Configs.MAXSwerveModule;
 
 public class RobotCommands { 
     // Intializes the intake Motor on the Robot as A SparkFlex Brushless Motor
@@ -40,21 +37,21 @@ public class RobotCommands {
         
 
         intakeConfig.closedLoop
-            .p(0.0003)
+            .p(0.0002)
             .i(0.0)
             .d(0.0)
             .velocityFF(0.00019)
             .outputRange(-1, 1);
 
         launcherConfig.closedLoop
-            .p(0.0003)
+            .p(0.0002)
             .i(0.0)
             .d(0.0)
             .velocityFF(0.00019)
             .outputRange(-1, 1);
 
         feedConfig.closedLoop
-            .p(0.0003)
+            .p(0.0002)
             .i(0.0)
             .d(0.0)
             .velocityFF(0.00016)
@@ -82,6 +79,7 @@ public class RobotCommands {
     static DoubleSolenoid boxNoid = new DoubleSolenoid(54,PneumaticsModuleType.REVPH,3, 10);
     
     static DigitalInput limitSwitch = new DigitalInput(0);
+    static DigitalInput[] autoSwitches = {new DigitalInput(1), new DigitalInput(2), new DigitalInput(3)};
 
     // Variable Declaration that assists in the creation of if statements the name suggests what they relate to
     public static boolean isClimbUp = false;
@@ -98,6 +96,20 @@ public class RobotCommands {
         return !limitSwitch.get();
     }
 
+    public static String getAutoMode() {
+        String mode = "";
+        for (DigitalInput autoSwitch : autoSwitches) {
+            if (!autoSwitch.get()) {
+                mode += "1";
+            }
+            else {
+                mode += "0";
+            }
+        }
+        return mode;
+    }
+    
+
     //A function that sets all Pneumatics 
     public static void setStartPneumatics(){
         climbHorizNoid.set(DoubleSolenoid.Value.kReverse);
@@ -109,9 +121,9 @@ public class RobotCommands {
         isFeedTurbo = !isFeedTurbo;
         if (isFeedTurbo) {
             if (isIntakeForward) {
-                feedPID.setReference(-3000, SparkBase.ControlType.kVelocity);
+                feedPID.setReference(-2000, SparkBase.ControlType.kVelocity);
             } else {
-                feedPID.setReference(3000, SparkBase.ControlType.kVelocity);
+                feedPID.setReference(2000, SparkBase.ControlType.kVelocity);
             }
         } else {
             if (isIntakeForward) {
@@ -189,7 +201,7 @@ public class RobotCommands {
     static void shooterEverythingStart() {
         isIntakeForward = false;
         intakePID.setReference(-LauncherConstants.kMaxRotationIntakeSpeed,SparkBase.ControlType.kVelocity);
-        feedPID.setReference(3000, SparkBase.ControlType.kVelocity);
+        feedPID.setReference(2000, SparkBase.ControlType.kVelocity);
     }
 
     static void shooterLauncherStart(double speed) {

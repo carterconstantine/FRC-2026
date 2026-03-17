@@ -10,7 +10,28 @@ import edu.wpi.first.wpilibj.motorcontrol.Spark;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.cameraserver.CameraServer;
+/* 
 import frc.robot.RobotCommands;
+
+import edu.wpi.first.apriltag.AprilTagDetection;
+import edu.wpi.first.apriltag.AprilTagDetector;
+import edu.wpi.first.apriltag.AprilTagPoseEstimator;
+import edu.wpi.first.cameraserver.CameraServer;
+import edu.wpi.first.cscore.CvSink;
+import edu.wpi.first.cscore.CvSource;
+import edu.wpi.first.cscore.UsbCamera;
+import edu.wpi.first.math.geometry.Rotation3d;
+import edu.wpi.first.math.geometry.Transform3d;
+import edu.wpi.first.networktables.IntegerArrayPublisher;
+import edu.wpi.first.networktables.NetworkTable;
+import edu.wpi.first.networktables.NetworkTableInstance;
+import edu.wpi.first.wpilibj.TimedRobot;
+import java.util.ArrayList;
+import org.opencv.core.Mat;
+import org.opencv.core.Point;
+import org.opencv.core.Scalar;
+import org.opencv.imgproc.Imgproc;
+*/
 
 //import frc.robot.RobotCommands;
 
@@ -40,14 +61,8 @@ public class Robot extends TimedRobot {
    */
   @Override
   public void robotInit() {
-    /* 
     CameraServer.startAutomaticCapture(0);
     CameraServer.startAutomaticCapture(1);
-    */
-
-
-    // Instantiate our RobotContainer.  This will perform all our button bindings, and put our
-    // autonomous chooser on the dashboard.
     m_robotContainer = new RobotContainer();
    
   }
@@ -78,7 +93,11 @@ public class Robot extends TimedRobot {
       leds.set(1);
     }
 
-    System.out.println(RobotCommands.getLauncherRPM());
+    //System.out.println("Launcher RPM: " + RobotCommands.getLauncherRPM());
+
+    //System.out.println("Limit Switch Status: " + RobotCommands.limitSwitchPressed());
+
+    //System.out.println("Auto Mode: " + RobotCommands.getAutoMode());
   
     //System.out.println("test");
   }
