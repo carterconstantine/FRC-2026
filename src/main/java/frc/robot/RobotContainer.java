@@ -10,7 +10,6 @@ import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.filter.Debouncer.DebounceType;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
-//import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.trajectory.Trajectory;
 import edu.wpi.first.math.trajectory.TrajectoryConfig;
 import edu.wpi.first.math.trajectory.TrajectoryGenerator;
@@ -82,7 +81,7 @@ public class RobotContainer {
 
     // Use InstantCommand for commands that only run once
 
-    // Creates a button that sets start pneumatics on the press of the start button on pilot controller.
+    // Sets pneumatics to reverse position when START pressed
     new JoystickButton(pilot, XboxController.Button.kStart.value).debounce(0.1,DebounceType.kRising)
       .onTrue(new InstantCommand(
         () -> RobotCommands.feedTurboOnOrOff(),
@@ -91,12 +90,13 @@ public class RobotContainer {
    
         // Co Pilot Commands Below-
    
-    // Creates a button that runs Intake Forward or Reverse based on the press of the A button on copilot controller.
+    // Sets the robot to intake mode when A pressed
     new JoystickButton(copilot, XboxController.Button.kA.value).debounce(0.1,DebounceType.kRising)
       .onTrue(new InstantCommand(
         () -> RobotCommands.intakeMode(),
         m_robotDrive));
 
+    // Starts up launcher at 5500 rpm when BACK pressed
     new JoystickButton(copilot, XboxController.Button.kBack.value).debounce(0.1,DebounceType.kRising)
       .onTrue(new InstantCommand(() -> RobotCommands.shooterLauncherStart(5500),m_robotDrive)
         .andThen(new WaitCommand(0.5))
@@ -104,7 +104,7 @@ public class RobotContainer {
         .andThen(new WaitCommand(0.5))
         .andThen(new InstantCommand(() -> RobotCommands.shooterFeedReduce(), m_robotDrive)));
 
-    // Creates a button that sets start pneumatics on the press of the start button on pilot controller.
+    // Starts up launcher at 4500 rpm when START pressed
     new JoystickButton(copilot, XboxController.Button.kStart.value).debounce(0.1,DebounceType.kRising)
       .onTrue(new InstantCommand(() -> RobotCommands.shooterLauncherStart(4500),m_robotDrive)
         .andThen(new WaitCommand(0.5))
@@ -112,7 +112,7 @@ public class RobotContainer {
         .andThen(new WaitCommand(0.5))
         .andThen(new InstantCommand(() -> RobotCommands.shooterFeedReduce(), m_robotDrive)));
 
-    // Creates a button that runs Intake Forward or Reverse based on the press of the A button on copilot controller.
+    // Starts up launcher at 3600 rpm when RIGHT BUMPER pressed
     new JoystickButton(copilot, XboxController.Button.kRightBumper.value).debounce(0.1,DebounceType.kRising)
       .onTrue(new InstantCommand(() -> RobotCommands.shooterLauncherStart(3600),m_robotDrive)
         .andThen(new WaitCommand(0.5))
@@ -120,34 +120,28 @@ public class RobotContainer {
         .andThen(new WaitCommand(0.5))
         .andThen(new InstantCommand(() -> RobotCommands.shooterFeedReduce(), m_robotDrive)));
 
-    // Creates a button that stops all robot motors when pressed
+    // Stops all non-drive motors when B pressed
     new JoystickButton(copilot, XboxController.Button.kB.value).debounce(0.1,DebounceType.kRising)
       .onTrue(new InstantCommand(
         () -> RobotCommands.motorStop(),
         m_robotDrive));
 
-    // Creates a button that runs Climb Up or Down based on the press of the Y button on copilot controller.
+    // Toggles the vertical climb solenoid when Y pressed
     new JoystickButton(copilot, XboxController.Button.kY.value).debounce(0.1,DebounceType.kRising)
       .onTrue(new InstantCommand(
         () -> RobotCommands.climbUpOrDown(),
         m_robotDrive));
 
-    // Creates a button that runs Climb In or Out based on the press of the X button on copilot controller.
+    // Toggles the horizontal climb solenoid when X pressed
     new JoystickButton(copilot, XboxController.Button.kX.value).debounce(0.1,DebounceType.kRising)
       .onTrue(new InstantCommand(
         () -> RobotCommands.climbInOrOut(),
         m_robotDrive));
 
-    // Creates a button that runs Climb In or Out based on the press of the X button on copilot controller.
+    // Toggles the box solenoid when LEFT BUMPER pressed
     new JoystickButton(copilot, XboxController.Button.kLeftBumper.value).debounce(0.1,DebounceType.kRising)
       .onTrue(new InstantCommand(
         () -> RobotCommands.boxInOrOut(),
-        m_robotDrive));
-
-    // Creates a button that stops all robot motors when pressed
-    new JoystickButton(copilot, XboxController.Button.kB.value).debounce(0.1,DebounceType.kRising)
-      .onTrue(new InstantCommand(
-        () -> RobotCommands.motorStop(),
         m_robotDrive));
   }
 
@@ -190,7 +184,7 @@ public class RobotContainer {
   
   
   public Command getAutonomousCommand() {
-    // 1. Create trajectory settings
+    // Create trajectory settings
     TrajectoryConfig driveFourFeetTrajectoryConfig = new TrajectoryConfig(
       2,
       AutoConstants.kMaxAccelerationMetersPerSecondSquared)
@@ -218,7 +212,7 @@ public class RobotContainer {
       AutoConstants.kMaxAccelerationMetersPerSecondSquared)
               .setKinematics(DriveConstants.kDriveKinematics);
 
-    // 2. Generate trajectory
+    // Generate trajectories
     Trajectory driveFourFeetTrajectory = TrajectoryGenerator.generateTrajectory(
         new Pose2d(0, 0, new Rotation2d(0)),
         List.of(),
@@ -255,14 +249,14 @@ public class RobotContainer {
       new Pose2d(0, Units.feetToMeters(-0.5), new Rotation2d(0)),
       driveIntoSideTrajectoryConfig);
 
-    // 3. Define PID controllers for tracking trajectory
+    // Define PID controllers for tracking trajectories
     PIDController xController = new PIDController(AutoConstants.kPXController, 0, 0);
     PIDController yController = new PIDController(AutoConstants.kPYController, 0, 0);
     ProfiledPIDController thetaController = new ProfiledPIDController(
         AutoConstants.kPThetaController, 0, 0, AutoConstants.kThetaControllerConstraints);
     thetaController.enableContinuousInput(-Math.PI, Math.PI);
 
-    // 4. Construct command to follow trajectory
+    // Construct commands to follow trajectories
     SwerveControllerCommand driveFourFeet = new SwerveControllerCommand(
         driveFourFeetTrajectory,
         m_robotDrive::getPose,
@@ -325,8 +319,9 @@ public class RobotContainer {
 
     
 
-    // 5. Add some init and wrap-up, and return everything
+    // Return auto commands based on selected mode with switches on robot
     String autoMode = RobotCommands.getAutoMode();
+    // Shoot then climb - right side
     if (autoMode.equals("001")) {
       return new SequentialCommandGroup(
       new InstantCommand(() -> RobotCommands.shooterLauncherStart(3600)),
@@ -355,6 +350,7 @@ public class RobotContainer {
       //turnRelative(-10)
       );
     }
+    // Climb - left side
     else if (autoMode.equals("010")) {
       return new SequentialCommandGroup(
         new InstantCommand(() -> RobotCommands.climbUp()),
@@ -375,6 +371,7 @@ public class RobotContainer {
         new InstantCommand(() -> RobotCommands.climbDown())
       );
     }
+    // Shoot only
     else if (autoMode.equals("011")) {
       return new SequentialCommandGroup(
         new InstantCommand(() -> RobotCommands.shooterLauncherStart(3600)),
@@ -386,6 +383,7 @@ public class RobotContainer {
         new InstantCommand(() -> RobotCommands.motorStop())
       );
     }
+    // Climb - right side
     else if (autoMode.equals("100")) {
       return new SequentialCommandGroup(
         new InstantCommand(() -> RobotCommands.climbUp()),
@@ -406,6 +404,7 @@ public class RobotContainer {
         new InstantCommand(() -> RobotCommands.climbDown())
       );
     }
+    // None
     else {
       return new SequentialCommandGroup();
     }
